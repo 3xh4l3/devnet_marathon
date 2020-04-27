@@ -11,7 +11,12 @@
   синхронизациивремени от источника во внутренней сети, предварительно 
   проверив его доступность.5. Вывести отчет в виде нескольких строк, 
   каждая изкоторых имеет следующийформат, близкий к такому:
-  Имя устройства - тип устройства -версия ПО -NPE/PE -CDP on/off, Xpeers-NTP in sync/not sync.
+  Имя устройства 
+  - тип устройства 
+  - версия ПО 
+  - NPE/PE 
+  - CDP on/off, Xpeers
+  - NTP in sync/not sync.
   Пример: 
   ms-gw-01|ISR4451/K9|BLD_V154_3_S_XE313_THROTTLE_LATEST |PE |CDP is ON,5peers |Clock in Sync 
   ms-gw-02|ISR4451/K9|BLD_V154_3_S_XE313_THROTTLE_LATEST |NPE|CDP is ON,0 peers|Clock in Sync
@@ -22,6 +27,7 @@ import netmiko
 from pprint import pprint
 from tqdm import tqdm
 from config import (
+    INVENTORY,
     NTP_PEERS,
     TIMEZONE,
     USERNAME,
@@ -33,19 +39,44 @@ from config import (
 def main():
     parser, args = get_args()
 
+    # Загружаем список хостов
+    try:
+        with open(INVENTORY) as f:
+            hosts = yaml.load(
+                f.read(),
+                Loader=yaml.Loader
+            )
+    except Exception as e:
+        exit(e)
+
+    # Выполняем указанные в аргументах задачи
+    jobs = []
     if args.config_ntp:
-        config_ntp()
+        jobs.append(config_ntp)
     elif args.get_configs:
-        get_configs()
+        jobs.append(get_configs)
     else:
         parser.print_help()
 
+    # Вы полняем задачи для хостов
+    for host in hosts:
+        worker(host, jobs)
+
+
+def worker(host, jobs):
+    """ 
+    """
+
 
 def config_ntp():
+    """
+    """
     pass
 
 
 def get_configs():
+    """
+    """
     pass
 
 
