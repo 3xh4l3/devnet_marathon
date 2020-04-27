@@ -1,6 +1,9 @@
-# Домашнее задание Cisco DevNET марафон - День 1
+# Марафон Cisco DevNET  - День 1
+
+Решение домашнего задания
 
 ```bash
+#./run.py
 usage: DEVNET [-h] [--get_configs] [--config_ntp]
 
 optional arguments:
