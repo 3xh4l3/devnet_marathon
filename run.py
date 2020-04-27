@@ -24,8 +24,10 @@
 import argparse
 import yaml
 import netmiko
+import napalm
 from pprint import pprint
 from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor
 from config import (
     INVENTORY,
     NTP_PEERS,
@@ -53,31 +55,52 @@ def main():
     jobs = []
     if args.config_ntp:
         jobs.append(config_ntp)
-    elif args.get_configs:
+    if args.get_configs:
         jobs.append(get_configs)
-    else:
-        parser.print_help()
 
-    # Вы полняем задачи для хостов
-    for host in hosts:
-        worker(host, jobs)
+    # Если нет заданий, просто выводим помощь
+    if len(jobs) == 0:
+        parser.print_help()
+    else:
+        # Вы полняем задачи для хостов
+        for host in hosts:
+            worker(host, jobs)
 
 
 def worker(host, jobs):
     """ 
     """
+    driver = napalm.get_network_driver("ios")
 
+    device = driver(
+        hostname=host,
+        username=USERNAME,
+        password=PASSWORD,
+        optional_args={
+            "secret": SECRET
+        }
+    )
+    device.open()
 
-def config_ntp():
+    if device:
+        for job in jobs:
+            job(device)
+    else:
+        print("Can't connect f{host}")
+
+def config_ntp(device):
     """
     """
-    pass
+    # print(f"{device} fo config_ntp")
+    # print(device)
+    pprint(device.get_ntp_peers())
 
 
-def get_configs():
+def get_configs(device):
     """
     """
-    pass
+    # print(f"{device} fo store_config")
+    pprint(device.get_config())
 
 
 def get_args():
