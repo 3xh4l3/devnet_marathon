@@ -9,7 +9,8 @@
   на устройствах исобрать со всех устройств данные о версиииспользуемого ПО. 
 4. Настроить на всех устройствах timezone GMT+0, получение данных для 
   синхронизациивремени от источника во внутренней сети, предварительно 
-  проверив его доступность.5. Вывести отчет в виде нескольких строк, 
+  проверив его доступность.
+5. Вывести отчет в виде нескольких строк, 
   каждая изкоторых имеет следующийформат, близкий к такому:
   Имя устройства 
   - тип устройства 
@@ -23,9 +24,9 @@
 """
 import argparse
 import yaml
-import os
-from netmiko import ConnectHandler
-from concurrent.futures import ThreadPoolExecutor
+from netmiko import ConnectHandler, Netmiko
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from prettytable import PrettyTable
 from tools import (
     get_configs,
     get_cdp_status,
@@ -34,8 +35,6 @@ from tools import (
 )
 from config import (
     INVENTORY,
-    NTP_PEERS,
-    TIMEZONE,
     USERNAME,
     PASSWORD,
     SECRET
@@ -55,21 +54,40 @@ def main():
     except Exception as e:
         exit(e)
 
-    # Выполняем указанные в аргументах задачи
+    # Определяем, какие задания необходимо выполнить
+    fields= ["Host"]
     jobs = []
+    if args.get_version:
+        jobs.append(get_version)
+        fields.append("Software Version")
+    if args.get_cdp_status:
+        jobs.append(get_cdp_status)
+        fields.append("CDP status")
     if args.config_ntp:
         jobs.append(config_ntp)
+        fields.append("NTP status")
     if args.get_configs:
         jobs.append(get_configs)
+        fields.append("Config status")
 
     # Если нет заданий, просто выводим помощь
     if len(jobs) == 0:
         parser.print_help()
     else:
-        # Выполняем задачи для хостов
-        for host in hosts:
-            worker(host, jobs)
+        # Инициализируем таблицу для вывода данных
+        table = PrettyTable()
 
+        # Выполняем задачи для хостов в 4 потока
+        with ThreadPoolExecutor(max_workers=4) as ex:
+            future = {ex.submit(worker, host, jobs) for host in hosts}
+            for future in as_completed(future):
+                table.add_row(future.result())
+
+        # Итоговая таблица с данными
+        table.field_names= fields
+        print(table)
+
+        
 
 def worker(host, jobs):
     """ Обработчик заданий
@@ -81,19 +99,19 @@ def worker(host, jobs):
         "password": PASSWORD,
         "secret": SECRET
     }
-    con = ConnectHandler(**device)
+    con = Netmiko(**device)
     
-    if con:
-
+    if con.find_prompt():
         device = {
             "con": con,
             "host": host
         }
-
+        result = [host]
         for job in jobs:
-            job(**device)
+            result.append(job(**device))
+        return result
     else:
-        print("Не удалось подключиться к f{host}")
+        return "Не удалось подключиться к f{host}"
 
 
 def get_args():
@@ -111,6 +129,18 @@ def get_args():
         "--config_ntp",
         action='store_true',
         help="Настроить NTP на всех устройствах"
+    )
+    
+    parser.add_argument(
+        "--get_cdp_status",
+        action='store_true',
+        help="Вывести статус CDP и количество соседей"
+    )
+
+    parser.add_argument(
+        "--get_version",
+        action='store_true',
+        help="Вывести версию ПО"
     )
 
     return parser, parser.parse_args()
