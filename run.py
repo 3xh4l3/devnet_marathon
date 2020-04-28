@@ -23,11 +23,15 @@
 """
 import argparse
 import yaml
-import netmiko
-import napalm
-from pprint import pprint
-from tqdm import tqdm
+import os
+from netmiko import ConnectHandler
 from concurrent.futures import ThreadPoolExecutor
+from tools import (
+    get_configs,
+    get_cdp_status,
+    get_version,
+    config_ntp
+)
 from config import (
     INVENTORY,
     NTP_PEERS,
@@ -62,45 +66,34 @@ def main():
     if len(jobs) == 0:
         parser.print_help()
     else:
-        # Вы полняем задачи для хостов
+        # Выполняем задачи для хостов
         for host in hosts:
             worker(host, jobs)
 
 
 def worker(host, jobs):
-    """ 
+    """ Обработчик заданий
     """
-    driver = napalm.get_network_driver("ios")
+    device = {
+        "device_type": "cisco_ios",
+        "host": host,
+        "username": USERNAME,
+        "password": PASSWORD,
+        "secret": SECRET
+    }
+    con = ConnectHandler(**device)
+    
+    if con:
 
-    device = driver(
-        hostname=host,
-        username=USERNAME,
-        password=PASSWORD,
-        optional_args={
-            "secret": SECRET
+        device = {
+            "con": con,
+            "host": host
         }
-    )
-    device.open()
 
-    if device:
         for job in jobs:
-            job(device)
+            job(**device)
     else:
-        print("Can't connect f{host}")
-
-def config_ntp(device):
-    """
-    """
-    # print(f"{device} fo config_ntp")
-    # print(device)
-    pprint(device.get_ntp_peers())
-
-
-def get_configs(device):
-    """
-    """
-    # print(f"{device} fo store_config")
-    pprint(device.get_config())
+        print("Не удалось подключиться к f{host}")
 
 
 def get_args():
