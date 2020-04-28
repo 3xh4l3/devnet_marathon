@@ -14,7 +14,7 @@ NET_TEXTFSM = path.join(WDIR, "ntc-templates/templates/")
 CONFDIR = path.join(WDIR, "configs/")
 
 # Настройки NTP
-NTP_SERVERS = ["10.7.0.1", "192.168.88.1", "1.2.3.4"]
+NTP_SERVERS = ["10.7.0.1", "192.168.88.1"]
 TIMEZONE = "UTC 0 0"
 
 # Подключение к оборудованию
