@@ -55,7 +55,7 @@ def main():
         exit(e)
 
     # Определяем, какие задания необходимо выполнить
-    fields= ["Host"]
+    fields = ["Host"]
     jobs = []
     if args.get_version:
         jobs.append(get_version)
@@ -84,10 +84,9 @@ def main():
                 table.add_row(future.result())
 
         # Итоговая таблица с данными
-        table.field_names= fields
+        table.field_names = fields
         print(table)
 
-        
 
 def worker(host, jobs):
     """ Обработчик заданий
@@ -100,7 +99,7 @@ def worker(host, jobs):
         "secret": SECRET
     }
     con = Netmiko(**device)
-    
+
     if con.find_prompt():
         device = {
             "con": con,
@@ -130,7 +129,7 @@ def get_args():
         action='store_true',
         help="Настроить NTP на всех устройствах"
     )
-    
+
     parser.add_argument(
         "--get_cdp_status",
         action='store_true',

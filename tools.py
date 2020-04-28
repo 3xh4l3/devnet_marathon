@@ -62,12 +62,14 @@ def config_ntp(**device):
 
     return "NTP unknown"
 
+
 def __check_ping(con, ip):
     out = con.send_command(f"ping {ip}")
 
     if re.search(r"Success rate is 0", out, flags=re.MULTILINE):
         return
     return True
+
 
 def get_configs(**device):
     """ Получает конфиг из вывода команды show run и сохраняет

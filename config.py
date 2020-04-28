@@ -1,5 +1,4 @@
 # /usr/bin/env python3
-from os import path, environ
 
 # Рабочая директория
 WDIR = path.dirname(path.realpath(__file__))
